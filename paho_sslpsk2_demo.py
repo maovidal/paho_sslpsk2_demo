@@ -13,6 +13,8 @@ the official https://hub.docker.com/_/eclipse-mosquitto with the tag
 The `psk` for `mosquitto` has this content:
 1234:1234
 
+Check more details about the environment on the README.md of the repository
+https://github.com/maovidal/paho_sslpsk2_demo 
 """
 
 
