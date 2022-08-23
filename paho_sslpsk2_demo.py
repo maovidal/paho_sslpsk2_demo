@@ -35,12 +35,13 @@ CONFIG_CLIENT_ID='paho_sslpsk2' # Having a fixed ID may help debugging on the br
 def _ssl_setup_psk_callbacks(sslobj):
     psk = sslobj.context.psk
     hint = sslobj.context.hint
+    identity = sslobj.context.identity
     if psk:
         if sslobj.server_side:
             cb = psk if callable(psk) else lambda _identity: psk
             _ssl_set_psk_server_callback(sslobj, cb, hint)
         else:
-            cb = psk if callable(psk) else lambda _hint: psk if isinstance(psk, tuple) else (psk, b"")
+            cb = psk if callable(psk) else lambda _hint: psk if isinstance(psk, tuple) else (psk, identity)
             _ssl_set_psk_client_callback(sslobj, cb)
 
 
@@ -60,6 +61,14 @@ class SSLPSKContext(ssl.SSLContext):
     @hint.setter
     def hint(self, hint):
         self._hint = hint
+
+    @property
+    def identity(self):
+        return getattr(self, "_identity", None)
+
+    @identity.setter
+    def identity(self, identity):
+        self._identity = identity
 
 
 class SSLPSKObject(ssl.SSLObject):
@@ -83,8 +92,8 @@ SSLPSKContext.sslsocket_class = SSLPSKSocket
 
 context = SSLPSKContext(ssl.PROTOCOL_TLS)
 context.set_ciphers('PSK')
-context.psk = (b'1234', bytes("1234", encoding="utf-8"))
-
+context.psk = bytes.fromhex('1234')
+context.identity = b'username'
 
 # Paho preparations according to the official guide
 # https://github.com/eclipse/paho.mqtt.python#getting-started
