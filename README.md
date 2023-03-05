@@ -1,12 +1,19 @@
 `paho mqtt client` using `TSL-PSK` communication.
 
-**This is a work in process, not yet functional.**
+This repository demonstrates how to set a MQTT client based on `paho mqtt client` to use `SSL PSK` communication for the MQTT protocol based on the discussion and resources provided by the post https://github.com/eclipse/paho.mqtt.python/issues/451#issuecomment-705682414 
+
+
+# Current status:
+
+- It is tested working on Linux, Python 3.10 and 3.11.
+
+- It is not Working on macOS with OpenSSL@3. Please [see below](#the-macos-case).
 
 
 # Expected result
 
 
-The client will connect to a MQTT broker subscribing to the `$SYS/#` topic printing on the terminal every message received.
+The client will connect to a MQTT broker subscribing to the `#` topic printing on the terminal every message received.
 
 
 # Preparations
@@ -14,36 +21,69 @@ The client will connect to a MQTT broker subscribing to the `$SYS/#` topic print
 
 ## MQTT Broker
 
-The broker tested is a `Mosquitto 2.0.14`running in a docker container from the official https://hub.docker.com/_/eclipse-mosquitto with the tag `2.0.14-openssl`.
+The broker tested is a `Mosquitto 2.0.15`running in a docker container from the official https://hub.docker.com/_/eclipse-mosquitto with the tag `2.0.15-openssl`. Its name on the network is `broker.local`
 
-The `psk` for `mosquitto` has this content:
->1234:1234
-
-Before going any further, it should help to confirm the Broker is working as expected to use `PSK`. One way to do it, having a machine with the official `mosquitto_pub` and `mosquitto_sub` clients with access to the `broker`(named here `broker.local`), is to issue each of the following on their own terminals:
-
-```
-mosquitto_sub --psk-identity 1234 --psk 1234 -h broker.local -p 8883 -t TestTopic -i TheReceiver
-```
-
-```
-mosquitto_pub --psk-identity 1234 --psk 1234 -h broker.local -p 8883 -t TestTopic -m Hello -i TheSender
-```
-
-On each of the latter, the former should display 'Hello`.
+The `psk` file for `mosquitto` has this content:
+>hello:1234
 
 
 ## The machine running the Python script
 
 
-`PSK` ciphers should be available to the Python environment running the script (See https://github.com/eclipse/paho.mqtt.python/issues/451#issuecomment-705682414). In my case, it was quite tricky to achieve that. For some reason my environment had available a very old `OpenSSL` with no `PSK` support.
+`PSK` ciphers should be available to the Python environment running the script. A quick check could be performed issuing this on the shell of the machine considering the above stated credentials:
 
-On a `Intel macOS 12.5` this was resolved installing `openssl@3` via `brew` and making sure to follow `brew` indications about making available `openssl` when issuing `brew link openssl --force`.
+```
+openssl s_client -psk 1234 -psk_identity hello -connect broker.local:8883
+```
 
-Regarding `sspsk2` I managed to install it ussing `ARCHFLAGS="-arch x86_64" pip3 install sslpsk2` otherwise `pip` complained about an unsupported achitecture.
+Also, the `sspsk2` package from https://github.com/autinerd/sslpsk2/ should be installed on the machine.
 
 
 # Usage
 
 
-run the script [paho_sslpsk2_demo.py](paho_sslpsk2_demo.py)
+Just run the script [paho_sslpsk2_demo.py](paho_sslpsk2_demo.py). The payload published by another client should be printed by the script.
 
+
+# Troubleshooting
+
+
+The official `mosquitto_pub` and `mosquitto_sub` clients can be used on the remote machine to check its ability to connect to the `broker`. This will check that the broker, its configuration, and clients with proven apps are able to work together using `PSK`. 
+
+A client can subscribe to the topic `TestTopic`:
+
+```
+mosquitto_sub --psk-identity hello --psk 1234 -h broker.local -p 8883 -t TestTopic -i TheReceiver
+```
+
+Another client can publish a `Hello` string to that `TestTopic`:
+
+```
+mosquitto_pub --psk-identity hello --psk 1234 -h broker.local -p 8883 -t TestTopic -m Hello -i TheSender
+```
+
+
+## Check the Mosquitto Broker
+
+The `psk` file above mentioned should contain the identity and key expected and the broker configuration file should contain matching port and location for that psk file:
+
+```
+listener 8883
+psk_file /mosquitto/config/psk
+```
+
+
+## The macOS case
+
+I haven't been able to get a working `paho` client working. **Any help regarding how to solve the macOS case will be greatly appreciated.**
+
+While the test of the combo `mosquitto_sub`/`mosquitto_pub` works on a `Intel macOS 13.2.1` with `openssl@3` installed via `brew`, testing the script of this repo reports:
+
+```
+ssl.SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:997)
+```
+
+It may be worth to mention that it was quite tricky for me to install the OpenSSL on the Mac machine. These considerations may help:
+
+- Make sure to follow `brew` indications about making available `openssl` when issuing `brew link openssl --force` as macOS provides LibreSSL.
+- I managed to install `sspsk2` using `ARCHFLAGS="-arch x86_64" pip3 install sslpsk2`. Otherwise `pip` complains about an unsupported architecture.
