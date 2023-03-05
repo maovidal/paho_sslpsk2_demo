@@ -1,13 +1,10 @@
-`paho mqtt client` using `TSL-PSK` communication.
-
-This repository demonstrates how to set a MQTT client based on `paho mqtt client` to use `SSL PSK` communication for the MQTT protocol based on the discussion and resources provided by the post https://github.com/eclipse/paho.mqtt.python/issues/451#issuecomment-705682414 
+This repository demonstrates how to set a MQTT client based on `paho mqtt client` to use `SSL PSK` communication for the MQTT protocol based on the discussion and resources provided by the post https://github.com/eclipse/paho.mqtt.python/issues/451
 
 
-# Current status:
+# Current status
 
 - It is tested working on Linux, Python 3.10 and 3.11.
-
-- It is not Working on macOS with OpenSSL@3. Please [see below](#the-macos-case).
+- It is not working on macOS with OpenSSL@3. Please [see below](#the-macos-case).
 
 
 # Expected result
@@ -83,7 +80,7 @@ While the test of the combo `mosquitto_sub`/`mosquitto_pub` works on a `Intel ma
 ssl.SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:997)
 ```
 
-It may be worth to mention that it was quite tricky for me to install the OpenSSL on the Mac machine. These considerations may help:
+It may be worth to mention that it was quite tricky for me to install the OpenSSL on the Mac machine. Those are my notes:
 
 - Make sure to follow `brew` indications about making available `openssl` when issuing `brew link openssl --force` as macOS provides LibreSSL.
 - I managed to install `sspsk2` using `ARCHFLAGS="-arch x86_64" pip3 install sslpsk2`. Otherwise `pip` complains about an unsupported architecture.
