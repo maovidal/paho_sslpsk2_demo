@@ -4,8 +4,8 @@ This repository demonstrates how to set a MQTT client based on `paho mqtt client
 # Current status
 
 - It is tested working on Linux, Python 3.10 and 3.11.
+- It is tested working on macOS 3.11.3, with Python compiled to use OpenSSL. Please [see below](#the-macos-case).
 - It does not work on Rocky Linux 8 with python 3.6 [Reported with #4 by @pat1](https://github.com/maovidal/paho_sslpsk2_demo/issues/4).
-- It is not working on macOS with OpenSSL@3. Please [see below](#the-macos-case).
 
 
 # Expected result
@@ -73,15 +73,28 @@ psk_file /mosquitto/config/psk
 
 ## The macOS case
 
-I haven't been able to get a working `paho` client working. **Any help regarding how to solve the macOS case will be greatly appreciated.**
+I was not able to get `sslpsk2` running on a macOS using the official Python installer. I presume that the reason is that this OS uses `LibreSSL` instead `OpenSSL`.
 
-While the test of the combo `mosquitto_sub`/`mosquitto_pub` works on a `Intel macOS 13.2.1` with `openssl@3` installed via `brew`, testing the script of this repo reports:
+With the official Python for macOS, testing the combo `mosquitto_sub`/`mosquitto_pub` on a `Intel macOS 13.2.1` it reported:
 
 ```
 ssl.SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:997)
 ```
 
-It may be worth to mention that it was quite tricky for me to install the OpenSSL on the Mac machine. Those are my notes:
+The above does not happen if `Python` is installed via `brew`. Check its official formulae: https://docs.brew.sh/Homebrew-and-Python#python-3y
 
-- Make sure to follow `brew` indications about making available `openssl` when issuing `brew link openssl --force` as macOS provides LibreSSL.
-- I managed to install `sspsk2` using `ARCHFLAGS="-arch x86_64" pip3 install sslpsk2`. Otherwise `pip` complains about an unsupported architecture.
+### Tips about installing `sslpsk2`:
+
+- Once `pip` complained about an unsupported architecture. I managed to install `sslpsk2` using `ARCHFLAGS="-arch x86_64" pip3 install sslpsk2`. 
+- Once I got this error when issuing `pip install sslpsk2`:
+
+```
+`clang: error: invalid version number in 'MACOSX_DEPLOYMENT_TARGET=13'`
+```
+
+Check this post https://stackoverflow.com/a/64838849/15786299 where it mentions that it can be solved with:
+
+```
+sudo rm -rf /Library/Developer/CommandLineTools
+sudo xcode-select --install
+```
